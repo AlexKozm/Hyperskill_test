@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+  <style>
+    * {
+      margin:0;
+      padding:0;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: Consolas, sans-serif;
+    }
+
+    .wrapper {
+      display: grid;
+      grid-template-areas:
+            'header'
+            'main'
+            'footer';
+      grid-template-rows: auto 1fr auto;
+      height: 100%;
+      width: 100%;
+    }
+
+    .header {
+      grid-area: header;
+    }
+
+    .main {
+      grid-area: main;
+      display: grid;
+      grid-template-areas:
+            'tag-list tag-info';
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .footer {
+      grid-area: footer;
+    }
+
+    .msgs {
+      grid-area: tag-list;
+      min-width: 100%;
+      height: 100%;
+      overflow: auto;
+    }
+
+    .msgs > li {
+      padding: 4px 15px;
+    }
+
+    .msg {
+      width: 50%;
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <header class="header">
+    <h1 style="text-align: center" >Chat</h1>
+    <hr>
+    <h5 class="status" id="status"> Status</h5>
+  </header>
+  <main class="main">
+    <div class="msgs" id="msgs">
+      Connecting to the app…
+      ${messages_on_connection}
+      <li>Ms</li>
+      <li>Ms</li>
+      <li>Ms</li>
+      <li>Ms</li>
+    </div>
+  </main>
+  <footer class="footer">
+    <hr>
+    <form id="form-msg" action="#" method="post">
+      <textarea class="msg" id="msg" placeholder="Write your msg here!" required></textarea>
+      <button type="submit">Send msg</button>
+      <button type="button" id="close">Close connection</button>
+    </form>
+  </footer>
+
+</div>
+</body>
+</html>
+<script>
+
+
+  window.onload = function () {
+    var url = 'ws://${host_ip}:8080/${path}'
+    // get the references of the page elements.
+    var form = document.getElementById('form-msg');
+    var txtMsg = document.getElementById('msg');
+    var listMsgs = document.getElementById('msgs');
+    var socketStatus = document.getElementById('status');
+    var btnClose = document.getElementById('close');
+    // Creating a new WebSocket connection.
+    var socket = new WebSocket(url);
+
+    socket.onopen = function (event) {
+      socketStatus.innerHTML = 'Connected to: ' + url;
+      socketStatus.className = 'open';
+    };
+
+    socket.onerror = function (error) {
+      console.log('WebSocket error: ' + error);
+    };
+
+    btnClose.onclick = function () {
+      socket.close()
+    }
+
+    form.onsubmit = function (e) {
+      e.preventDefault();
+      // Recovering the message of the textarea.
+      var msg = txtMsg.value;
+      // Sending the msg via WebSocket.
+      socket.send(msg);
+      // Cleaning up the field after sending.
+      txtMsg.value = '';
+      return false;
+    };
+
+    socket.onmessage = function (event) {
+      var msg = event.data;
+      // listMsgs.innerHTML += '<li class="received"><span>Received:</span>' + msg + '</li>';
+      listMsgs.innerHTML += msg;
+      listMsgs.scrollTo(0, document.body.scrollHeight);
+    };
+
+    socket.onclose = function (event) {
+      socketStatus.innerHTML = 'Disconnected from the WebSocket.';
+      socketStatus.className = 'closed';
+    };
+
+  };
+
+
+</script>

@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-
         *,
         *:before,
         *:after {
@@ -17,6 +16,7 @@
         html {
             font-family: Helvetica, Arial, sans-serif;
             font-size: 100%;
+            height: 100%;
             background: #333;
         }
 
@@ -131,13 +131,15 @@
         <button type="submit">Send msg</button>
         <button type="button" id="close">Close connection</button>
     </form>
-    <div id="msgs">Conecting to the app…</div>
+    <div id="msgs">Conecting to the app…
+    ${messages_on_connection}
+    </div>
 </div>
 <script>
 
 
     window.onload = function () {
-
+        var url = 'ws://${host_ip}:8080/${path}'
         // get the references of the page elements.
         var form = document.getElementById('form-msg');
         var txtMsg = document.getElementById('msg');
@@ -145,10 +147,10 @@
         var socketStatus = document.getElementById('status');
         var btnClose = document.getElementById('close');
         // Creating a new WebSocket connection.
-        var socket = new WebSocket('ws://${host_ip}:8080/${path}');
+        var socket = new WebSocket(url);
 
         socket.onopen = function (event) {
-            socketStatus.innerHTML = 'Connected to: ' + 'ws://${host_ip}:8080/${path}';
+            socketStatus.innerHTML = 'Connected to: ' + url;
             socketStatus.className = 'open';
         };
 
@@ -170,7 +172,7 @@
             socket.send(msg);
 
             // Adding the msg in a list of sent messages.
-            litsMsgs.innerHTML += '<li class="sent"><span>Sent:</span>' + msg + '</li>';
+            // litsMsgs.innerHTML += '<li class="sent"><span>Sent:</span>' + msg + '</li>';
 
             // Cleaning up the field after sending.
             txtMsg.value = '';
@@ -180,7 +182,8 @@
 
         socket.onmessage = function (event) {
             var msg = event.data;
-            listMsgs.innerHTML += '<li class="received"><span>Received:</span>' + msg + '</li>';
+            // listMsgs.innerHTML += '<li class="received"><span>Received:</span>' + msg + '</li>';
+            listMsgs.innerHTML += msg;
         };
 
         socket.onclose = function (event) {
