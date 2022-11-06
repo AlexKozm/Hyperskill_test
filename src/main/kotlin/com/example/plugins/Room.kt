@@ -1,24 +1,28 @@
 package com.example.plugins
 
 import com.example.Connection
-import io.ktor.server.routing.*
-import io.ktor.util.*
-import io.ktor.websocket.*
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.collections.LinkedHashSet
 
+/**
+ * Stores all messages, connections
+ */
 class Room {
-    val connections: MutableSet<Connection> = Collections.synchronizedSet<Connection>(LinkedHashSet())
-    val number = lastId.getAndIncrement()
+    val connections: MutableSet<Connection> = Collections.synchronizedSet(LinkedHashSet())
     val messages = Collections.synchronizedList(mutableListOf<Message>())
     companion object {
-        val lastId = AtomicInteger(0)
+        private val lastId = AtomicInteger(0)
+        fun getIdAndRoom(): Pair<Int, Room> =
+            Pair(lastId.getAndIncrement(), Room())
     }
+
+    /**
+     * Constructor is private. Use getIdAndRoom()
+     */
+    private constructor()
 
     fun addConnection(connection: Connection) {
         connections += connection
@@ -31,27 +35,36 @@ class Room {
         messages += message
     }
 
+    /**
+     * Returns last message in html format ar greeting
+     */
     fun getLastMessage(): String =
          if (messages.size != 0) {
             messages.last().toString()
-        } else "Write something"
+        } else Message(text = "Hello! Write something").toString()
 
+    /**
+     *  Returns all messages in html format divided by '\n'
+     */
     fun getAllMessages(): String {
         var msg = ""
         for (i in messages) {
             msg += i.toString() + "\n"
         }
-        println("getAllMessages: $msg")
-        return msg
+        return if (msg != "") msg else Message(text = "Hello! Write something").toString()
     }
 }
 
+/**
+ * Stores time, author and text of a message
+ */
 data class Message(
-    val time: LocalDateTime,
-    val author: String,
+    val time: LocalDateTime? = null,
+    val author: String? = null,
     val text: String
 ) {
     override fun toString() = "<li class=\"received\">" +
-            "<span>${time.format(DateTimeFormatter.ofPattern("HH:mm"))}," +
-            " ${author}: </span>${text}</li>"
+            "<span>${time?.run { format(DateTimeFormatter.ofPattern("HH:mm")).toString() + ", " } ?: ""}" +
+            " ${author?.let { "$it: " } ?: ""}</span>${text}</li>"
+
 }

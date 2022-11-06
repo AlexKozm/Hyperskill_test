@@ -11,13 +11,14 @@ import java.time.Duration
 import java.util.*
 
 fun main() {
+    // stores all rooms
     val rooms = Collections.synchronizedMap(HashMap<Int, Room>())
+    //configuration of server's parameters
     embeddedServer(Netty, port = 8080, host = "0.0.0.0", ) {
         installModules()
-//        configureRooms()
-        configureRoutings(rooms)
+        configureRouting(rooms)
         configureSockets(rooms)
-    }.start(wait = true) //configuration of server's parameters
+    }.start(wait = true)
 }
 
 /**
@@ -28,6 +29,7 @@ fun Application.installModules() {
     install(FreeMarker) {
         templateLoader = ClassTemplateLoader(this::class.java.classLoader, "client")
     }
+    // installing WebSocket
     install(WebSockets) {
         pingPeriod = Duration.ofSeconds(15)
         timeout = Duration.ofSeconds(15)
@@ -35,12 +37,3 @@ fun Application.installModules() {
         masking = false
     }
 }
-
-///**
-// * creates map of "id to room"
-// */
-//fun Application.configureRooms() {
-//    val rooms = Collections.synchronizedMap(HashMap<Int, Room>())
-//    configureRoutings(rooms)
-//    configureSockets(rooms)
-//}

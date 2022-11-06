@@ -6,7 +6,7 @@ import io.ktor.server.freemarker.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
-fun Application.configureRoutings(rooms: MutableMap<Int, Room>) {
+fun Application.configureRouting(rooms: MutableMap<Int, Room>) {
     //Installs a routing plugin
     routing {
         /**
@@ -14,28 +14,26 @@ fun Application.configureRoutings(rooms: MutableMap<Int, Room>) {
          * Creates room, adds it to a map and redirects to this room
          */
         get("/create_room") {
-            val newRoom = Room()
-            rooms += Pair(newRoom.number, newRoom)
-            call.respondRedirect("/rooms/${newRoom.number}")
+            Room.getIdAndRoom().also { room -> rooms += room }.first.also { id ->
+                call.respondRedirect("/rooms/${id}")
+            }
         }
 
         /**
-         * Respond with html page witch represent room/{id} or HttpStatusCode.NotFound
+         * Respond with html page witch represent room or respond with HttpStatusCode.NotFound
          */
         get("/rooms/{id}") {
-            println(call.request.local.host)
-            val num = call.parameters["id"]?.toInt()
-            if (num in rooms.keys) {
-                println("web_socket/$num")
-                call.respondTemplate(
-                    "index1.html",
-                    mapOf("host_ip" to call.request.local.host,
-                        "path" to "web_socket/$num", "messages_on_connection" to rooms[num]?.getAllMessages()
+            call.parameters["id"]?.toIntOrNull()?.let { id ->
+                rooms[id]?.let { room ->
+                    println("web_socket/$id")
+                    call.respondTemplate(
+                        "index1.html",
+                        mapOf("host_ip" to call.request.local.host,
+                            "path" to "web_socket/$id", "messages_on_connection" to room.getAllMessages()
+                        )
                     )
-                )
-            } else {
-                call.respond(status = HttpStatusCode.NotFound, message = "There is no such room")
-            }
+                }
+            } ?: call.respond(status = HttpStatusCode.NotFound, message = "There is no such room")
         }
     }
 }

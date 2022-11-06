@@ -11,21 +11,27 @@ import java.time.LocalDateTime
 fun Application.configureSockets(rooms: MutableMap<Int, Room>) {
     routing {
         /**
-         * Setting WS connection with id room
+         * Setting WS connection to room with certain id
          */
         webSocket("/web_socket/{id}") {
-            val thisRoom = call.parameters["id"]?.toIntOrNull()?.let {num -> rooms[num] } ?:
-                send("There is no WS with such id. Closing").run { return@webSocket }
-            val thisConnection = Connection(this).also { thisRoom.addConnection(it) }
-            println("User: ${thisConnection.name} added to room ${thisRoom.number}")
-            send("You are connected! There are ${thisRoom.connections.count()} users here now")
-            onIncoming(thisRoom, thisConnection)
-            println("removing ${thisConnection.name}!")
-            thisRoom.removeConnection(thisConnection)
+            call.parameters["id"]?.toIntOrNull()?.let { num ->
+                rooms[num]?.let { room ->
+                    Connection(this).apply {
+                        room.addConnection(this)
+                        println("User: $name added to room $num")
+                        onIncoming(room, this)
+                        println("removing $name!")
+                        room.removeConnection(this)
+                    }
+                }
+            } ?: send("There is no WS with such id. Closing")
         }
     }
 }
 
+/**
+ * waits for messages, then saves it in the room and retransmits to all room's connectors
+ */
 suspend fun DefaultWebSocketServerSession.onIncoming(thisRoom: Room, thisConnection: Connection) {
     for (frame in incoming) {
         frame as? Frame.Text ?: continue
